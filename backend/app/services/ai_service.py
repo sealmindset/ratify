@@ -22,8 +22,12 @@ _TOPIC_COUNTS: dict[str, int] = {
 
 
 def _ai_configured() -> bool:
-    """Return True if real AI credentials are present."""
-    return bool(settings.AZURE_AI_FOUNDRY_ENDPOINT and settings.AZURE_AI_FOUNDRY_API_KEY)
+    """Return True if real AI credentials are present for the configured provider."""
+    if settings.AI_PROVIDER == "anthropic_foundry":
+        return bool(settings.AZURE_AI_FOUNDRY_ENDPOINT and settings.AZURE_AI_FOUNDRY_API_KEY)
+    elif settings.AI_PROVIDER == "anthropic":
+        return bool(settings.ANTHROPIC_API_KEY)
+    return False
 
 
 def _get_api_url(model_key: str) -> tuple[str, dict[str, str], str]:
@@ -45,17 +49,19 @@ def _get_api_url(model_key: str) -> tuple[str, dict[str, str], str]:
             },
             model,
         )
-    else:
-        # Direct Anthropic fallback
+    elif settings.AI_PROVIDER == "anthropic":
         return (
             "https://api.anthropic.com/v1/messages",
             {
-                "x-api-key": settings.AZURE_AI_FOUNDRY_API_KEY,
+                "x-api-key": settings.ANTHROPIC_API_KEY,
                 "anthropic-version": "2023-06-01",
                 "Content-Type": "application/json",
             },
             model,
         )
+    else:
+        logger.warning(f"Unknown AI_PROVIDER '{settings.AI_PROVIDER}', falling back to demo mode")
+        return ("", {}, model)
 
 
 async def chat(messages: list[dict], system: str, model_key: str = "standard") -> str:

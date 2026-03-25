@@ -2,6 +2,22 @@
 
 All notable changes to Ratify will be documented in this file.
 
+## [0.6.0] - 2026-03-25
+
+### Added
+- Full Settings admin page with grouped sections, inline editing, bulk save per group
+- Sensitive value masking with reveal button (requires edit permission)
+- "Requires restart" badges on settings that need a server restart
+- Audit log tab showing who changed what, when, with old/new values
+- Bool toggle, int, and string input types for settings
+- Direct Anthropic API provider support (AI_PROVIDER=anthropic with ANTHROPIC_API_KEY)
+
+### Fixed
+- Settings API endpoints now enforce RBAC permissions (admin.settings.read/update)
+- Settings audit log records the actual user email instead of "system"
+- AI provider fallback used wrong API key for direct Anthropic (was reusing Azure key)
+- AI provider detection now correctly checks credentials per provider type
+
 ## [0.5.0] - 2026-03-24
 
 ### Added

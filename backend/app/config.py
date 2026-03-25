@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     AI_MODEL_LIGHT: str = "claude-haiku-4-5"
     AZURE_AI_FOUNDRY_ENDPOINT: str = ""
     AZURE_AI_FOUNDRY_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
     # AI Safety
     AI_RATE_LIMIT_REQUESTS_PER_MINUTE: int = 20
     AI_RATE_LIMIT_TOKENS_PER_MINUTE: int = 50000

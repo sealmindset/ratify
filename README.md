@@ -1,117 +1,263 @@
-# FastAPI + Next.js Scaffold
+# Ratify
 
-## What This Is
+An AI-powered RFC (Request for Comments) management platform for teams that need structured technical decision-making. Ratify streamlines the entire RFC lifecycle -- from AI-guided authoring through collaborative review to formal sign-off.
 
-This is the infrastructure scaffold used by `/make-it` when building a web application with a FastAPI backend and Next.js frontend. It contains proven, battle-tested patterns extracted from real builds.
+## What It Does
 
-The scaffold provides the foundational infrastructure that every app needs -- authentication, database, Docker orchestration, and mock services for local development. Claude copies these files into the new project during the Build phase and replaces placeholders with app-specific values.
+- **AI-Driven RFC Creation** -- An adaptive interview engine asks targeted questions based on RFC type, then generates structured document sections automatically
+- **Collaborative Review** -- Inline document comments with threaded replies, resolve/unresolve workflow, and AI-assisted response drafting
+- **Role-Based Access Control** -- Four system roles (Super Admin, Admin, Manager, User) with granular, database-driven permissions
+- **RFC Registry** -- Central dashboard for tracking all RFCs with status, ownership, and review progress
+- **Sign-Off Tracking** -- Formal approval workflows for team and executive sign-off
+- **Jira Integration** -- Sync RFCs with Jira for project tracking (mock service included for local dev)
+- **Admin Console** -- Manage users, roles, application settings, AI prompts, and activity logs
+- **Prompt Management** -- 11 managed AI prompts editable through the admin UI with version history and test preview
 
-## How Claude Uses This During /make-it
+## Tech Stack
 
-1. **Design phase** determines the app slug, ports, users, and integrations
-2. **Build phase** copies scaffold files into the project directory
-3. Placeholders are replaced with values from `app-context.json`
-4. App-specific code (frontend, backend, migrations) is generated on top of this foundation
-5. `seed-mock-services.sh` is customized with the app's users and any extra mock services
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS |
+| Backend | FastAPI (Python), SQLAlchemy (async), Alembic migrations |
+| Database | PostgreSQL 16 |
+| Auth | OIDC (mock provider for local dev, pluggable for Azure AD / Entra ID) |
+| AI | Anthropic Claude (via Azure AI Foundry or direct API) |
+| Infrastructure | Docker Compose (5 services) |
 
-## Files
+## Prerequisites
 
-| File | Copied As-Is? | Notes |
-|------|---------------|-------|
-| `mock-services/mock-oidc/` | Yes | Complete mock OIDC provider. Ships unchanged with every app. |
-| `docker-compose.yml` | Customized | Placeholders replaced; additional services added per app |
-| `scripts/seed-mock-services.sh` | Customized | User list and extra mock seeding filled in per app |
-| `.env.example` | Customized | Additional service URLs added per app |
-| `.gitignore` | Yes | Standard Python + Node.js + Docker gitignore |
+- [Docker](https://www.docker.com/) and Docker Compose
+- Git
 
-## Placeholders
+That's it. Everything runs in containers.
 
-All placeholders use the `[PLACEHOLDER_NAME]` format and are replaced during the Build phase.
-
-| Placeholder | Description | Example |
-|-------------|-------------|---------|
-| `Ratify` | Human-readable app name | DeliverIt |
-| `ratify` | Kebab-case identifier (used for DB, containers) | deliver-it |
-| `3100` | Host port mapped to frontend container port 3000 | 3100 |
-| `8000` | Host port mapped to backend container port 8000 | 8100 |
-| `5500` | Host port mapped to PostgreSQL container port 5432 | 5500 |
-| `10090` | Host port mapped to mock-oidc container port 10090 | 10090 |
-| `[SEED_USERS]` | JSON array of `{sub, email, name}` for seed script | See below |
-| `[ADDITIONAL_SERVICE_ENVS]` | Extra env vars in backend service | `JIRA_BASE_URL=...` |
-| `[ADDITIONAL_MOCK_SERVICES]` | Extra service definitions in docker-compose | mock-jira service block |
-| `[ADDITIONAL_MOCK_SEED]` | Extra seeding logic in seed script | Jira project creation |
-| `[ADDITIONAL_SERVICE_URLS]` | Extra env var docs in .env.example | `JIRA_BASE_URL=...` |
-
-### SEED_USERS Example
+## Quick Start
 
 ```bash
-SEED_USERS='[
-  {"sub": "mock-admin", "email": "admin@deliver-it.local", "name": "Admin User"},
-  {"sub": "mock-manager", "email": "manager@deliver-it.local", "name": "Manager User"},
-  {"sub": "mock-user", "email": "user@deliver-it.local", "name": "Regular User"},
-  {"sub": "mock-viewer", "email": "viewer@deliver-it.local", "name": "Viewer User"}
-]'
+# Clone the repository
+git clone https://github.com/sealmindset/ratify.git
+cd ratify
+
+# Copy the environment file
+cp .env.example .env
+
+# Generate a JWT secret
+echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env
+
+# Start all services
+docker compose --profile dev up --build
 ```
 
-The `sub` values must exactly match the `oidc_subject` column in the database seed migration. This alignment is what connects "the person who logs in" to "the user row with the correct role."
+Once healthy, open **http://localhost:3100** in your browser.
+
+### Test Users (Local Dev)
+
+The mock OIDC provider comes pre-seeded with these accounts:
+
+| Role | Email | Permissions |
+|------|-------|-------------|
+| Super Admin | admin@ratify.local | Full access (48 permissions) |
+| Admin | admin2@ratify.local | Administrative access (46 permissions) |
+| Manager | manager@ratify.local | RFC and review management (32 permissions) |
+| User | engineer@ratify.local | Basic RFC authoring and commenting (9 permissions) |
+
+Click "Sign In" and select a user from the login page.
 
 ## Architecture
 
+```
+┌─────────────────┐     ┌──────────────────┐     ┌─────────────┐
+│  Frontend        │     │  Backend          │     │  PostgreSQL  │
+│  Next.js :3100   │────>│  FastAPI :8000    │────>│  :5500       │
+│                  │     │                   │     │              │
+│  Proxy /api/*    │     │  JWT Auth         │     │  RBAC tables │
+│  Tailwind CSS    │     │  Alembic migrate  │     │  Domain data │
+│  React Table     │     │  AI service       │     │              │
+└─────────────────┘     └──────────────────┘     └─────────────┘
+                              │          │
+                    ┌─────────┘          └──────────┐
+                    ▼                               ▼
+            ┌──────────────┐              ┌──────────────┐
+            │  mock-oidc    │              │  mock-jira    │
+            │  :10090       │              │  :8543        │
+            └──────────────┘              └──────────────┘
+```
+
+- **Frontend** proxies all `/api/*` requests to the backend via Next.js rewrites
+- **Backend** handles auth, RBAC, CRUD, and AI orchestration
+- **mock-oidc** provides a local OIDC identity provider (replaceable with Azure AD / Entra ID in production)
+- **mock-jira** simulates Jira REST API for local development
+
 ### Authentication Flow
 
+1. User clicks "Sign In" on the frontend
+2. Browser redirects to the OIDC provider's authorize endpoint
+3. After login, the provider redirects back with an authorization code
+4. Backend exchanges the code for tokens server-to-server
+5. Backend looks up the user in the database by OIDC subject, loads their role and permissions
+6. A JWT is issued as an httpOnly cookie
+7. All subsequent API calls include the cookie automatically
+
+### RBAC Model
+
+Permissions are enforced at every API endpoint using `require_permission(resource, action)` middleware. The system never checks role names directly -- only granular permissions like `rfcs.create`, `admin.settings.update`, or `reviews.read`.
+
+## API Endpoints
+
+| Group | Endpoints |
+|-------|-----------|
+| Auth | `GET /auth/login`, `GET /auth/callback`, `GET /auth/me`, `POST /auth/logout` |
+| RFCs | `GET /rfcs`, `POST /rfcs`, `GET /rfcs/{id}`, `PUT /rfcs/{id}`, `DELETE /rfcs/{id}` |
+| Sections | `GET /rfcs/{id}/sections`, `POST /rfcs/{id}/sections`, `PUT /sections/{id}`, `DELETE /sections/{id}` |
+| Comments | `GET /rfcs/{id}/comments`, `POST /rfcs/{id}/comments`, `PATCH /comments/{id}` |
+| Reviews | `GET /rfcs/{id}/reviews`, `POST /rfcs/{id}/reviews`, `GET /my-reviews` |
+| Sign-Offs | `GET /rfcs/{id}/sign-offs`, `POST /rfcs/{id}/sign-offs` |
+| AI | `POST /ai/interview`, `POST /ai/refine`, `POST /ai/assist` |
+| Jira | `POST /jira/sync`, `GET /jira/status` |
+| Admin | `GET/PUT /admin/settings`, `GET /admin/logs/events`, `GET /admin/logs/stats`, `DELETE /admin/logs/clear` |
+| Users | `GET /users`, `POST /users`, `PUT /users/{id}`, `DELETE /users/{id}` |
+| Roles | `GET /roles`, `GET /permissions` |
+
+## AI Features
+
+Ratify integrates with Anthropic Claude models for three capabilities:
+
+1. **Interview Engine** -- Conducts an adaptive, topic-aware interview to gather RFC content. Tracks coverage across 8 topics per RFC type, probes for detail when answers are vague, and skips topics already covered.
+
+2. **Section Refinement** -- Takes an existing RFC section and rewrites it based on user instructions (e.g., "make it more concise", "add risk analysis").
+
+3. **Comment Assistance** -- Helps RFC authors draft thoughtful responses to reviewer comments.
+
+### AI Provider Configuration
+
+Ratify supports two AI providers. Without credentials, it runs in **demo mode** with mock responses.
+
+**Azure AI Foundry:**
+```env
+AI_PROVIDER=anthropic_foundry
+AZURE_AI_FOUNDRY_ENDPOINT=https://your-endpoint.azure.com
+AZURE_AI_FOUNDRY_API_KEY=your-key
 ```
-Browser                Frontend (Next.js)         Backend (FastAPI)        mock-oidc
-  |                         |                          |                      |
-  |-- click "Sign In" ----->|                          |                      |
-  |                         |-- redirect to /authorize ---------------------->|
-  |<-- login page (user list) ------------------------------------------------|
-  |-- select user ---------------------------------------------------------->|
-  |<-- redirect with ?code= ----------------------------                      |
-  |-- /api/auth/callback -->|                          |                      |
-  |                         |-- POST /token (code) ----|--------------------->|
-  |                         |<-- access_token + id_token ----------------------|
-  |                         |-- GET /userinfo ----------|--------------------->|
-  |                         |<-- {sub, email, name} ---|----------------------|
-  |                         |-- POST /auth/callback --->|                      |
-  |                         |                          |-- lookup user by sub  |
-  |                         |                          |-- get role + perms    |
-  |                         |                          |-- create session JWT  |
-  |                         |<-- set cookie + redirect-|                      |
-  |<-- authenticated -------|                          |                      |
+
+**Direct Anthropic API:**
+```env
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=your-key
 ```
 
-Key points:
-- The frontend proxies auth requests to the backend (Next.js API routes)
-- The backend exchanges the code for tokens server-to-server (never exposed to browser)
-- User roles come from the application database, NOT from the OIDC provider
-- The mock-oidc provider only supplies identity (sub, email, name)
+### AI Models
 
-### Internal/External URL Split
+| Tier | Default Model | Used For |
+|------|--------------|----------|
+| Heavy | claude-opus-4-6 | RFC section generation |
+| Standard | claude-sonnet-4-6 | Interview conversations, refinement |
+| Light | claude-haiku-4-5 | Comment assistance |
 
-mock-oidc natively handles the Docker networking split:
-- `MOCK_OIDC_EXTERNAL_BASE_URL` (e.g., `http://localhost:10090`) -- used for the `authorization_endpoint` in the discovery document, since the browser navigates to it directly
-- `MOCK_OIDC_INTERNAL_BASE_URL` (e.g., `http://mock-oidc:10090`) -- used for `token_endpoint`, `userinfo_endpoint`, and `jwks_uri`, since the backend calls these server-to-server inside the Docker network
+Models are configurable via `AI_MODEL_HEAVY`, `AI_MODEL_STANDARD`, and `AI_MODEL_LIGHT` environment variables.
 
-This eliminates the need for `OIDC_INTERNAL_URL` environment variables or URL rewriting logic in the application.
+## Configuration
 
-### RBAC
+All configuration is done through environment variables. Copy `.env.example` to `.env` and adjust as needed.
 
-The database has four tables for role-based access control:
-- `roles` -- system roles (Super Admin, Admin, Manager, User) plus custom roles
-- `permissions` -- page-level CRUD permissions (e.g., `forecasts.view`, `users.create`)
-- `role_permissions` -- junction table mapping roles to permissions
-- `users` -- has a `role_id` foreign key and `oidc_subject` for OIDC identity mapping
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql+asyncpg://ratify:ratify@db:5432/ratify` |
+| `OIDC_ISSUER_URL` | OIDC provider URL | `http://mock-oidc:10090` |
+| `OIDC_CLIENT_ID` | OIDC client ID | `mock-oidc-client` |
+| `OIDC_CLIENT_SECRET` | OIDC client secret | `mock-oidc-secret` |
+| `JWT_SECRET` | Secret for signing JWTs | (must be set) |
+| `FRONTEND_URL` | Frontend base URL | `http://localhost:3100` |
+| `BACKEND_URL` | Backend base URL | `http://localhost:8000` |
+| `AI_PROVIDER` | AI backend (`anthropic_foundry` or `anthropic`) | `anthropic_foundry` |
+| `JIRA_BASE_URL` | Jira instance URL | `http://mock-jira:8543` |
+| `AI_RATE_LIMIT_REQUESTS_PER_MINUTE` | AI request rate limit | `20` |
+| `AI_RATE_LIMIT_TOKENS_PER_MINUTE` | AI token rate limit | `50000` |
+| `AI_MAX_PROMPT_CHARS` | Max prompt input size | `100000` |
+| `ENFORCE_SECRETS` | Require strong secrets in production | `false` |
 
-Every route handler uses `require_permission(resource, action)` middleware. The app never checks role strings directly.
+## Project Structure
 
-### Health Checks
+```
+ratify/
+├── frontend/                # Next.js 15 application
+│   ├── app/(auth)/          # Authenticated pages (dashboard, RFCs, admin)
+│   ├── app/(public)/        # Public pages (login)
+│   ├── components/          # Shared UI components
+│   └── lib/                 # API client, auth context, utilities
+├── backend/                 # FastAPI application
+│   ├── app/
+│   │   ├── routers/         # API route handlers
+│   │   ├── models/          # SQLAlchemy ORM models
+│   │   ├── schemas/         # Pydantic request/response schemas
+│   │   ├── services/        # Business logic (AI, prompts, settings)
+│   │   └── middleware/      # Auth and permission middleware
+│   ├── alembic/versions/    # Database migrations
+│   └── tests/               # pytest test suite (56 tests)
+├── mock-services/
+│   ├── mock-oidc/           # Local OIDC identity provider
+│   └── mock-jira/           # Local Jira API simulator
+├── docker-compose.yml       # Container orchestration
+└── .env.example             # Environment variable template
+```
 
-All health checks use `127.0.0.1` (not `localhost`) to avoid IPv6 resolution issues in Alpine containers:
-- **Frontend**: `wget --spider -q http://127.0.0.1:3000` (Alpine has wget)
-- **Backend**: `python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"` (slim image, no wget/curl)
-- **mock-oidc**: `python3 -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:10090/health')"` (slim image)
-- **PostgreSQL**: `pg_isready -U ratify`
+## Testing
 
-### Port Selection
+### Backend Tests (pytest)
 
-Default ports (3000, 5432, 8000) are almost always taken on developer machines running multiple Docker projects. During the Design phase, `/make-it` checks `lsof -i :PORT` and selects available ports. The scaffold placeholders make this remapping seamless.
+```bash
+# Run inside the Docker container
+docker compose --profile dev exec backend python -m pytest tests/ -x -q --tb=short
+```
+
+56 tests covering:
+- Mock AI service (vague detection, topic coverage, interview flow)
+- Prompt service (defaults, cache, RFC type mapping)
+- RFC CRUD, comments, reviews, sign-offs
+- Permission enforcement (403 for unauthorized roles)
+- Health endpoints
+
+### E2E Tests (Playwright)
+
+Playwright scaffolding is in place for end-to-end browser tests covering health checks, login flow, dashboard, and RFC list.
+
+## Dependencies
+
+### Backend (Python)
+
+| Package | Purpose |
+|---------|---------|
+| fastapi | Web framework |
+| uvicorn | ASGI server |
+| sqlalchemy[asyncio] | Async ORM |
+| asyncpg | PostgreSQL async driver |
+| alembic | Database migrations |
+| pydantic-settings | Configuration management |
+| PyJWT | JWT token handling |
+| httpx | Async HTTP client (AI, OIDC, Jira calls) |
+| python-multipart | Form data parsing |
+
+### Frontend (Node.js)
+
+| Package | Purpose |
+|---------|---------|
+| next | React framework |
+| react / react-dom | UI library |
+| @tanstack/react-table | Data tables |
+| tailwindcss | Utility-first CSS |
+| lucide-react | Icon library |
+| next-themes | Dark/light theme toggle |
+| clsx + tailwind-merge | Conditional class utilities |
+
+## Ports
+
+| Service | Port |
+|---------|------|
+| Frontend | 3100 |
+| Backend API | 8000 |
+| PostgreSQL | 5500 |
+| mock-oidc | 10090 |
+| mock-jira | 8543 |
+
+## License
+
+Private -- not licensed for redistribution.

@@ -10,9 +10,10 @@
 - [ ] Email/Slack notifications for review assignments
 - [ ] Dashboard metrics and charts
 - [ ] Terraform infrastructure for cloud deployment
-- [ ] Full Settings admin page (currently scaffold placeholder)
 
 ## Completed
+- [x] Full Settings admin page (grouped, masked sensitive values, audit log, RBAC)
+- [x] AI provider dual-mode support (Azure AI Foundry + direct Anthropic)
 - [x] Project scaffolding (FastAPI + Next.js)
 - [x] OIDC authentication with mock-oidc
 - [x] Database-driven RBAC (roles, permissions, role_permissions, users)

@@ -141,6 +141,34 @@ export interface SignOff {
   created_at: string;
 }
 
+// Settings types
+
+export interface AppSetting {
+  id: string;
+  key: string;
+  value: string | null;
+  group_name: string;
+  display_name: string;
+  description: string | null;
+  value_type: string;
+  is_sensitive: boolean;
+  requires_restart: boolean;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppSettingAuditLog {
+  id: string;
+  setting_id: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by: string;
+  created_at: string;
+}
+
+// AI types
+
 export interface AIConversation {
   id: string;
   rfc_id: string;
