@@ -7,3 +7,8 @@ pydantic-settings
 PyJWT
 httpx
 python-multipart
+
+# Testing
+pytest
+pytest-asyncio
+aiosqlite

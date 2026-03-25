@@ -9,7 +9,6 @@
 - [ ] Export RFC to Markdown/PDF
 - [ ] Email/Slack notifications for review assignments
 - [ ] Dashboard metrics and charts
-- [ ] Automated tests (pytest backend, Playwright e2e)
 - [ ] Terraform infrastructure for cloud deployment
 - [ ] Full Settings admin page (currently scaffold placeholder)
 
@@ -31,3 +30,4 @@
 - [x] Inline document comments (create, reply, resolve, threaded)
 - [x] Tier 2 Prompt Management (11 prompts, admin UI, version history, test preview)
 - [x] Adaptive AI interview engine (topic tracking, follow-up probes, progress UI)
+- [x] Automated tests (pytest backend 56 tests, Playwright e2e scaffolded)

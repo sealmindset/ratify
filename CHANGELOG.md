@@ -2,6 +2,18 @@
 
 All notable changes to Ratify will be documented in this file.
 
+## [0.5.0] - 2026-03-24
+
+### Added
+- pytest backend test suite (56 tests) with in-memory SQLite + async fixtures
+- Unit tests for mock AI service (vague detection, topic coverage, interview flow)
+- Unit tests for prompt service (defaults, cache, RFC type mapping)
+- Integration tests for RFC CRUD, comments, reviews, sign-offs, AI interview
+- Permission enforcement tests (403 for unauthorized roles)
+- Health endpoint tests
+- Playwright e2e test scaffolding (health, login, dashboard, RFC list)
+- SQLite/PostgreSQL UUID compatibility layer for test fixtures
+
 ## [0.4.0] - 2026-03-24
 
 ### Added
