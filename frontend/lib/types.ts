@@ -156,4 +156,8 @@ export interface AIResponse {
   conversation_id: string | null;
   rfc_id: string | null;
   sections_generated: boolean;
+  // Interview progress metadata
+  topics_covered: string[] | null;
+  topics_total: number | null;
+  current_topic: string | null;
 }

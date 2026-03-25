@@ -2,6 +2,25 @@
 
 All notable changes to Ratify will be documented in this file.
 
+## [0.4.0] - 2026-03-24
+
+### Added
+- Adaptive AI interview engine with topic-aware questioning
+- Topic coverage tracking per RFC type (8 topics each for 7 RFC types)
+- Follow-up probing when answers are vague or too short
+- Automatic topic skipping when answers cover multiple areas
+- Interview progress sidebar with topic pills and progress bar
+- Typing indicator animation (bouncing dots)
+- Message timestamps in interview chat
+- Interview summary panel on completion (questions, answers, avg words)
+- Textarea input with auto-resize for longer answers (Shift+Enter for newline)
+- Richer adaptive prompts for all 7 RFC types with explicit behavior rules
+
+### Changed
+- AI response schema now includes topics_covered, topics_total, current_topic
+- Mock AI service rewritten with keyword-based topic detection engine
+- Interview prompts expanded with TOPICS TO COVER and ADAPTIVE RULES sections
+
 ## [0.3.0] - 2026-03-24
 
 ### Added

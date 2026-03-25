@@ -40,3 +40,7 @@ class AIResponse(BaseModel):
     conversation_id: uuid.UUID | None = None
     rfc_id: uuid.UUID | None = None
     sections_generated: bool = False
+    # Interview progress metadata
+    topics_covered: list[str] | None = None
+    topics_total: int | None = None
+    current_topic: str | None = None

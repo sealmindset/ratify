@@ -49,11 +49,13 @@ async def start_interview(
 
     # Start the conversation
     initial_messages = json.dumps([])
-    updated_messages, ai_response = await ai_service.interview_next(
-        initial_messages,
-        data.rfc_type,
-        f"I want to create an RFC titled '{data.title}' of type '{data.rfc_type}'. Please start the interview.",
-        db,
+    updated_messages, ai_response, topics_covered, topics_total, current_topic = (
+        await ai_service.interview_next(
+            initial_messages,
+            data.rfc_type,
+            f"I want to create an RFC titled '{data.title}' of type '{data.rfc_type}'. Please start the interview.",
+            db,
+        )
     )
 
     conversation = AIConversation(
@@ -69,6 +71,9 @@ async def start_interview(
         message=ai_response,
         conversation_id=conversation.id,
         rfc_id=rfc.id,
+        topics_covered=topics_covered,
+        topics_total=topics_total,
+        current_topic=current_topic,
     )
 
 
@@ -87,11 +92,13 @@ async def continue_interview(
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    updated_messages, ai_response = await ai_service.interview_next(
-        conversation.messages_json,
-        conversation.rfc_type,
-        data.message,
-        db,
+    updated_messages, ai_response, topics_covered, topics_total, current_topic = (
+        await ai_service.interview_next(
+            conversation.messages_json,
+            conversation.rfc_type,
+            data.message,
+            db,
+        )
     )
     conversation.messages_json = updated_messages
 
@@ -121,6 +128,9 @@ async def continue_interview(
         conversation_id=conversation.id,
         rfc_id=conversation.rfc_id,
         sections_generated=sections_generated,
+        topics_covered=topics_covered,
+        topics_total=topics_total,
+        current_topic=current_topic,
     )
 
 

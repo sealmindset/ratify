@@ -2,7 +2,6 @@
 
 ## Planned
 - [ ] Rich text editor for RFC section editing
-- [ ] AI interview engine with adaptive questioning by RFC type
 - [ ] AI comment response assistance
 - [ ] Jira Epic/sub-task auto-creation
 - [ ] Sign-off tracking per team and executive approval
@@ -31,3 +30,4 @@
 - [x] Navigation wiring (sidebar, breadcrumbs, quick-search)
 - [x] Inline document comments (create, reply, resolve, threaded)
 - [x] Tier 2 Prompt Management (11 prompts, admin UI, version history, test preview)
+- [x] Adaptive AI interview engine (topic tracking, follow-up probes, progress UI)

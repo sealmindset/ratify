@@ -9,6 +9,17 @@ from app.services.prompt_service import get_prompt, get_interview_prompt, RFC_TY
 
 logger = logging.getLogger(__name__)
 
+# Topic counts per RFC type (used when real AI is active to report progress)
+_TOPIC_COUNTS: dict[str, int] = {
+    "infrastructure": 8,
+    "security": 8,
+    "architecture": 8,
+    "process": 8,
+    "integration": 8,
+    "data": 8,
+    "other": 8,
+}
+
 
 def _ai_configured() -> bool:
     """Return True if real AI credentials are present."""
@@ -76,8 +87,11 @@ async def chat(messages: list[dict], system: str, model_key: str = "standard") -
 
 async def interview_next(
     messages_json: str, rfc_type: str, user_message: str, db: AsyncSession
-) -> tuple[str, str]:
-    """Continue an interview conversation and return the AI's next question."""
+) -> tuple[str, str, list[str] | None, int | None, str | None]:
+    """Continue an interview conversation and return the AI's next question.
+
+    Returns: (updated_messages_json, response, topics_covered, topics_total, current_topic)
+    """
     if not _ai_configured():
         from app.services.mock_ai_service import interview_next as mock_interview
         return await mock_interview(messages_json, rfc_type, user_message)
@@ -89,7 +103,20 @@ async def interview_next(
 
     response = await chat(messages, system, model_key="standard")
     messages.append({"role": "assistant", "content": response})
-    return json.dumps(messages), response
+
+    # For real AI, we estimate progress based on message count
+    # (the AI naturally covers ~8 topics in 8-15 exchanges)
+    assistant_count = sum(1 for m in messages if m["role"] == "assistant")
+    topics_total = _TOPIC_COUNTS.get(rfc_type, 8)
+    estimated_covered = min(assistant_count, topics_total)
+
+    return (
+        json.dumps(messages),
+        response,
+        None,  # Real AI doesn't return discrete topic names
+        topics_total,
+        None,
+    )
 
 
 async def generate_sections(
