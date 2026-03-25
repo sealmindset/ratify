@@ -1,0 +1,170 @@
+{
+  "project_name": "Ratify",
+  "app_slug": "ratify",
+  "app_tagline": "AI-powered RFC creation, review, and management platform",
+  "app_icon": "R",
+  "project_type": "web-app",
+  "active_tiers": [0, 1],
+  "scaffold": "fastapi-nextjs",
+  "skipped_guardrails": [],
+
+  "purpose": "Replace endless circular meetings with a structured AI-driven RFC process. An AI interviews architects/engineers to generate comprehensive RFCs tailored by type, tracks them in a registry with full lifecycle management, enables targeted team reviews with references, and syncs tasks to Jira.",
+
+  "users": {
+    "audience": "internal",
+    "description": "Architects and engineers at Sleep Number (initially), expandable to other companies",
+    "approximate_count": "50-200",
+    "types": [
+      { "role": "Super Admin", "description": "Full system control, manages roles and permissions" },
+      { "role": "Admin", "description": "Manages users, system settings, and RFC templates" },
+      { "role": "Manager", "description": "Creates RFCs, assigns reviewers, approves sign-offs" },
+      { "role": "User", "description": "Views RFCs, submits comments, completes review assignments" }
+    ]
+  },
+
+  "features": [
+    {
+      "name": "AI Interview Engine",
+      "description": "Conversational AI that interviews the author to generate a comprehensive RFC. Adapts questions based on RFC type (infrastructure, security, process, etc.). Uses heavy model for complex analysis, standard for general questions."
+    },
+    {
+      "name": "RFC Registry",
+      "description": "Central registry of all RFCs with lifecycle tracking: Draft → In Review → Approved → Implemented. Filterable by status, type, author, team."
+    },
+    {
+      "name": "RFC Editor",
+      "description": "Rich text editing of RFC sections. Authors can edit directly or return to AI conversation to refine sections. AI assists with responding to reviewer comments."
+    },
+    {
+      "name": "Review System",
+      "description": "Targeted review assignments per team for specific sections, plus open commentary on any section. Commenters can attach references (links, prior decisions, other RFCs). Sign-off tracking per team and executive approval."
+    },
+    {
+      "name": "Jira Integration",
+      "description": "Auto-creates Jira Epic for each RFC, sub-tasks for review assignments with deadlines, and implementation tasks extracted from RFC content. Syncs status bidirectionally."
+    },
+    {
+      "name": "Dashboard",
+      "description": "Overview of RFC metrics: active RFCs, pending reviews, approval rates, average review time, recent activity."
+    }
+  ],
+
+  "pages": [
+    { "name": "Dashboard", "path": "/dashboard", "description": "RFC metrics, pending reviews, recent activity" },
+    { "name": "RFC Registry", "path": "/rfcs", "description": "List all RFCs with filters and search" },
+    { "name": "RFC Creator", "path": "/rfcs/new", "description": "AI interview wizard to create new RFC" },
+    { "name": "RFC Detail", "path": "/rfcs/[id]", "description": "View RFC with all sections, comments, reviews, sign-offs" },
+    { "name": "RFC Editor", "path": "/rfcs/[id]/edit", "description": "Edit RFC sections with rich text or AI refinement" },
+    { "name": "Review Panel", "path": "/rfcs/[id]/reviews", "description": "Manage reviews, assignments, and sign-offs" },
+    { "name": "My Reviews", "path": "/reviews", "description": "User's assigned and pending reviews" },
+    { "name": "Admin - Users", "path": "/admin/users", "description": "User management" },
+    { "name": "Admin - Roles", "path": "/admin/roles", "description": "Role and permission management" },
+    { "name": "Admin - Settings", "path": "/admin/settings", "description": "Application settings" }
+  ],
+
+  "stack": {
+    "backend": "FastAPI (Python 3.12)",
+    "frontend": "Next.js 15 (React, TypeScript, Tailwind CSS)",
+    "database": "PostgreSQL 16",
+    "orm": "SQLAlchemy 2.0 + Alembic",
+    "auth": "OIDC (mock-oidc for dev, Azure AD for production)",
+    "containerization": "Docker Compose"
+  },
+
+  "ports": {
+    "frontend": 3100,
+    "backend": 8000,
+    "database": 5500,
+    "mock_oidc": 10090,
+    "mock_jira": 8543
+  },
+
+  "auth": {
+    "provider": "OIDC",
+    "local_provider": "mock-oidc",
+    "production_provider": "Azure AD / Entra ID",
+    "jwt_stateless": true,
+    "roles_from_database": true
+  },
+
+  "ai": {
+    "usage_level": "moderate",
+    "tier": 2,
+    "provider": "anthropic_foundry",
+    "models": {
+      "heavy": "claude-opus-4-6",
+      "standard": "claude-sonnet-4-6",
+      "light": "claude-haiku-4-5"
+    },
+    "features": [
+      "RFC interview engine (adaptive questioning by type)",
+      "Section generation from interview answers",
+      "Comment response assistance",
+      "Implementation task extraction from RFC content"
+    ]
+  },
+
+  "integrations": [
+    {
+      "name": "Jira",
+      "mock_service": "mock-jira",
+      "mock_port": 8543,
+      "direction": "read/write",
+      "operations": ["Create Epic", "Create Sub-tasks", "Create Implementation Tasks", "Sync Status", "Get Issue Details"]
+    }
+  ],
+
+  "mock_services": ["mock-oidc", "mock-jira"],
+
+  "domain_models": [
+    {
+      "name": "RFC",
+      "fields": ["title", "rfc_number", "type", "status", "author_id", "summary", "jira_epic_key"],
+      "statuses": ["draft", "in_review", "approved", "rejected", "implemented", "archived"]
+    },
+    {
+      "name": "RFCSection",
+      "fields": ["rfc_id", "title", "content", "order", "section_type"]
+    },
+    {
+      "name": "ReviewAssignment",
+      "fields": ["rfc_id", "section_id", "reviewer_id", "team", "status", "deadline", "jira_task_key"]
+    },
+    {
+      "name": "Comment",
+      "fields": ["rfc_id", "section_id", "author_id", "content", "parent_id"]
+    },
+    {
+      "name": "Reference",
+      "fields": ["comment_id", "url", "title", "ref_type"]
+    },
+    {
+      "name": "SignOff",
+      "fields": ["rfc_id", "signer_id", "team", "status", "signed_at"]
+    },
+    {
+      "name": "AIConversation",
+      "fields": ["rfc_id", "messages_json", "rfc_type", "status"]
+    }
+  ],
+
+  "permissions": {
+    "rfcs": ["create", "read", "update", "delete"],
+    "rfcs.sections": ["create", "read", "update", "delete"],
+    "reviews": ["create", "read", "update", "delete"],
+    "comments": ["create", "read", "update", "delete"],
+    "signoffs": ["create", "read", "update", "delete"],
+    "ai": ["interview", "refine", "extract"],
+    "jira": ["sync", "read"],
+    "admin.users": ["create", "read", "update", "delete"],
+    "admin.roles": ["create", "read", "update", "delete"],
+    "admin.settings": ["read", "update"],
+    "admin.logs": ["read", "delete"]
+  },
+
+  "deployment": {
+    "target": "production",
+    "infrastructure": "terraform",
+    "cloud_provider": "to be determined during ship-it"
+  }
+}
